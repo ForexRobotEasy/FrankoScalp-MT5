@@ -1,0 +1,67 @@
+mql5
+// FrankoScalp MT5
+// Developer's Site: forexroboteasy.com
+// Development: Forex Robot Easy Team
+
+// Include necessary libraries and define constants
+
+#include <Trade\Trade.mqh>
+#include <Expert\Expert.mqh>
+#include <MovingAverages\MovingAverages.mqh>
+
+#define SYMBOL 'EURUSD'
+#define LOTS 0.1
+#define STOP_LOSS 50
+#define TAKE_PROFIT 100
+#define MAGIC_NUMBER 123456
+
+// Initialize global variables
+
+CTrade trade;
+CMovingAverages ma;
+
+// Called when the Expert Advisor is initialized
+
+int OnInit()
+{
+    // Set up moving averages parameters
+    ma.Setup(SYMBOL, PERIOD_M15, 10, MODE_SMA, PRICE_CLOSE, MODE_SMA, PRICE_CLOSE);
+
+    return(INIT_SUCCEEDED);
+}
+
+// Called on each tick
+
+void OnTick()
+{
+    // Check if we have an open position
+    if(trade.PositionSelect(SYMBOL))
+    {
+        // Close position if price crosses below the fast moving average
+        if(ma.iCustom(0, 0) > trade.PositionGetDouble(POSITION_PRICE_OPEN))
+        {
+            trade.PositionClose(SYMBOL);
+        }
+    }
+    else
+    {
+        // Open long position if price crosses above the slow moving average
+        if(ma.iCustom(1, 0) < ma.iCustom(1, 1) && ma.iCustom(0, 0) > ma.iCustom(0, 1))
+        {
+            trade.Buy(SYMBOL, LOTS, 0, 0, STOP_LOSS, TAKE_PROFIT, 'FrankoScalp', MAGIC_NUMBER);
+        }
+        // Open short position if price crosses below the slow moving average
+        else if(ma.iCustom(1, 0) > ma.iCustom(1, 1) && ma.iCustom(0, 0) < ma.iCustom(0, 1))
+        {
+            trade.Sell(SYMBOL, LOTS, 0, 0, STOP_LOSS, TAKE_PROFIT, 'FrankoScalp', MAGIC_NUMBER);
+        }
+    }
+}
+
+// Called when the Expert Advisor is deinitialized
+
+void OnDeinit(const int reason)
+{
+    // Clean up
+    trade.PositionClose(SYMBOL);
+}
